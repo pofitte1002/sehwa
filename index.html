@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학교생활기록부 - 세화고등학교 세계관</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&family=Nanum+Myeongjo:wght@400;700;800&family=Gaegu:wght@400;700&display=swap');
+        
+        :root {
+            --bg-dark: #0a0a0a;
+            --paper-white: #ffffff;
+            --vivid-blue: #0047ff;
+            --neon-yellow: #d4ff00;
+            --line-gray: #d1d1d1;
+            --stamp-red: rgba(220, 20, 60, 0.7);
+            --postit-yellow: #fff782;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Noto Sans KR', sans-serif; 
+            background-color: var(--bg-dark); 
+            color: var(--paper-white);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* 로딩 화면 */
+        #loading-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .loading-title { font-size: 1.5rem; font-weight: 300; margin-bottom: 20px; letter-spacing: 5px; }
+        .progress-container { width: 200px; height: 2px; background: #222; }
+        .progress-bar { width: 0%; height: 100%; background: var(--neon-yellow); box-shadow: 0 0 15px var(--neon-yellow); }
+
+        /* 메인 레이아웃 */
+        #main-site { display: none; padding: 40px 20px; max-width: 1200px; margin: 0 auto; }
+        header { padding: 60px 0; text-align: center; }
+        .main-title { font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 900; line-height: 1; }
+        .highlight-tag { background: var(--vivid-blue); color: white; padding: 5px 20px; font-size: 1.1rem; display: inline-block; transform: rotate(-1deg); margin-bottom: 10px; }
+
+        /* 세계관 & 포스트잇 */
+        .worldview-section { background: #f4f4f4; color: #111; padding: 40px; margin: 40px auto; box-shadow: 15px 15px 0px #333; border: 1px solid #ccc; }
+        .news-header h2 { font-family: 'Nanum Myeongjo', serif; font-size: 1.8rem; margin-bottom: 15px; border-bottom: 2px solid #111; padding-bottom: 10px; }
+        .news-content { font-family: 'Nanum Myeongjo', serif; column-count: 2; column-gap: 30px; text-align: justify; }
+        
+        .memo-container { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 50px; }
+        .postit { background: var(--postit-yellow); color: #111; padding: 20px; width: 260px; min-height: 240px; box-shadow: 5px 5px 10px rgba(0,0,0,0.3); font-family: 'Gaegu', cursive; font-size: 1.2rem; transform: rotate(-1deg); }
+        .postit:nth-child(2) { background: #ffccff; transform: rotate(2deg); }
+        .postit:nth-child(3) { background: #ccffff; transform: rotate(-2deg); }
+
+        /* 슬라이더 시스템 */
+        .slider-wrapper { position: relative; margin: 40px 0; padding: 0 50px; }
+        .slider-container { overflow: hidden; }
+        .slider-track { display: flex; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); gap: 20px; }
+        
+        .nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 50px; height: 50px; background: var(--neon-yellow); border: none;
+            cursor: pointer; font-size: 24px; font-weight: bold; z-index: 10;
+            box-shadow: 3px 3px 0px var(--vivid-blue); display: flex; align-items: center; justify-content: center;
+        }
+        .nav-btn:hover { background: white; }
+        .prev-btn { left: -10px; }
+        .next-btn { right: -10px; }
+
+        .category-label { font-size: 2rem; font-weight: 900; color: var(--neon-yellow); margin: 80px 0 20px; border-left: 10px solid var(--vivid-blue); padding-left: 20px; }
+
+        /* NPC 카드 디자인 */
+        .npc-card {
+            background: var(--paper-white); color: #222; 
+            flex: 0 0 calc(50% - 10px); /* 한 줄에 2개 */
+            min-height: 560px; padding: 25px; position: relative;
+            box-shadow: 10px 10px 20px rgba(0,0,0,0.4);
+            background-image: linear-gradient(90deg, transparent 39px, #ffccd5 39px, #ffccd5 41px, transparent 41px),
+                              linear-gradient(var(--line-gray) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 28px;
+            display: flex; flex-direction: column;
+        }
+
+        .resume-header { display: flex; justify-content: space-between; margin-bottom: 20px; border: 2px solid #222; background: #fff; }
+        .info-table { flex: 1; display: grid; grid-template-columns: 60px 1fr; font-size: 0.8rem; }
+        .info-table div { border: 1px solid #222; padding: 4px; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .info-label { background: #f0f0f0; font-weight: bold; }
+        .photo-area { width: 100px; height: 100px; border-left: 2px solid #222; background: #f9f9f9; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #bbb; }
+
+        .npc-content { padding-left: 35px; flex-grow: 1; }
+        .npc-intro { margin-bottom: 20px; font-size: 0.95rem; line-height: 1.5; }
+        .npc-quote { 
+            margin-top: auto; background: var(--neon-yellow); color: #000; 
+            font-weight: bold; padding: 8px 12px; display: inline-block; 
+            font-family: 'Nanum Myeongjo', serif; transform: rotate(-1deg); font-size: 0.95rem;
+        }
+        .stamp { position: absolute; bottom: 20px; right: 20px; border: 3px double var(--stamp-red); color: var(--stamp-red); font-size: 0.9rem; font-weight: 900; padding: 3px 10px; transform: rotate(-15deg); border-radius: 5px; pointer-events: none; opacity: 0.8; }
+
+        @media (max-width: 800px) {
+            .npc-card { flex: 0 0 100%; } /* 모바일은 1개 */
+            .news-content { column-count: 1; }
+            .slider-wrapper { padding: 0 40px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <div class="loading-title">Now Loading</div>
+        <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+    </div>
+
+         <!-- 신문 기사 섹션 -->
+        <section class="worldview-section">
+            <div class="news-header">
+                <div class="news-meta">사회면 | 교육특별취재팀 | 입력 2024.05.22</div>
+                <h2>[집중취재] 강남의 성벽 '세화고', 그 화려한 교문 뒤에 숨겨진 계급사회</h2>
+            </div>
+            <div class="news-content">
+                <p>서울 강남의 중심부에 위치한 사립 명문 세화고등학교는 매년 최상위권 의대 진학률을 경신하며 '교육의 성지'라 불린다. 최첨단 교육 시설과 자율적 학풍을 홍보하며 민주적인 교육 과정을 표방하고 있으나, 본지 취재 결과 그 실상은 철저한 자본과 성적에 의한 계급사회인 것으로 드러났다.</p>
+                <p>학교의 교훈인 '정의, 진리, 사랑'은 허울에 불과했다. 학생과 학부모 사이에서 교사는 더 이상 스승이 아닌, '생활기록부 작성 노예' 혹은 '교육 서비스직 종사자'로 전락했다. 생활기록부가 대학 입시의 절대적인 권력으로 작용하면서, 기록의 주도권을 쥔 교사를 향한 학부모들의 전방위적 압박과 학생들의 지능적인 괴롭힘이 도를 넘어서고 있다.</p>
+                <p>특히 2학년 3반을 중심으로 확산된 교사 품평회와 상시 녹음 문화는 교권 낙후의 현주소를 적나라하게 보여준다. 한 익명의 교사는 "우리는 아이들의 미래를 기록하는 기계일 뿐"이라며 한탄했다.</p>
+            </div>
+        </section>
+
+        <!-- 포스트잇 메모 섹션 -->
+        <div class="memo-container">
+            <div class="postit">
+                <h3>※ 포식자 무리</h3>
+                - 물리적 폭력 대신 정신적 타격을 주도함<br>
+                - 수업 방해 및 교사 조롱이 주특기<br>
+                - 부모의 재력을 등에 업고 거침없음<br>
+                - <b>주의:</b> 정면 대응 시 학부모 민원 폭탄
+            </div>
+            <div class="postit">
+                <h3>※ 우인 무리</h3>
+                - 겉모습은 완벽한 모범생 코스프레<br>
+                - 뒤에서는 교사 품평회 주최함<br>
+                - 주머니 속에 항상 녹음기 소지<br>
+                - 법적/행정적 허점을 찌르는 지능적 괴롭힘
+            </div>
+            <div class="postit">
+                <h3>※ 유령 무리</h3>
+                - 철저한 개인주의, 이어폰 상시 착용<br>
+                - 학업 외 상황 발생 시 '못 봤다' 시전<br>
+                - 어떤 부조리에도 방관자로 일관함<br>
+            </div>
+        </div>
+
+        <!-- 교사 파트 -->
+        <div class="category-label">교사진 : 교육 서비스 종사자</div>
+        <div class="slider-wrapper" id="teacher-slider">
+            <button class="nav-btn prev-btn">❮</button>
+            <div class="slider-container">
+                <div class="slider-track">
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>이은지</div>
+                                <div class="info-label">소속</div><div>2-3 담임</div>
+                                <div class="info-label">성향</div><div>ISTJ</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[인적 사항]</strong> 여성 / 29세 / 일반사회<br><br>질끈 묶은 흑발, 창백한 피부. 학생들의 무리한 요구에도 무표정하게 대응하며 생기부 입력 업무에만 기계적으로 몰두함.</div>
+                            <br>
+                            <div class="npc-quote">"생기부 수정 기간 지났습니다. 돌아가세요."</div>
+                        </div>
+                        <div class="stamp">기밀</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>김석훈</div>
+                                <div class="info-label">소속</div><div>학년부장</div>
+                                <div class="info-label">성향</div><div>ESTJ</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[인적 사항]</strong> 남성 / 52세 / 윤리<br><br>대머리, 깐깐한 눈매, 개량 한복. 원칙주의를 내세우며 동료 교사와 학생들을 끊임없이 감시하고 압박함.</div>
+                            <br>
+                            <div class="npc-quote">"자네, 기록을 이따위로 해서 학교 위신이 서겠나?"</div>
+                        </div>
+                        <div class="stamp">확인</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>박진철</div>
+                                <div class="info-label">소속</div><div>교감</div>
+                                <div class="info-label">성향</div><div>ESFJ</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[인적 사항]</strong> 남성 / 58세 / 수학<br><br>올백머리, 금시계, 비굴한 미소. 강한 자본 권력 앞에선 한없이 낮아지며 학교의 안녕보다 본인의 안위를 챙김.</div>
+                            <br>
+                            <div class="npc-quote">"어이구, 의원님 자제분 오셨습니까?"</div>
+                        </div>
+                        <div class="stamp">승인</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>최지수</div>
+                                <div class="info-label">소속</div><div>기간제</div>
+                                <div class="info-label">성향</div><div>INFP</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[인적 사항]</strong> 여성 / 26세 / 영어<br><br>겁먹은 눈동자, 항상 위축된 어깨. 학생들의 지능적인 비꼼과 질문 공세에 매번 말문이 막히는 주 타겟.</div>
+                            <br>
+                            <div class="npc-quote">"그... 선생님이 다시 확인해 볼게..."</div>
+                        </div>
+                        <div class="stamp">주의</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>정태성</div>
+                                <div class="info-label">소속</div><div>학생부</div>
+                                <div class="info-label">성향</div><div>ESTP</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[인적 사항]</strong> 남성 / 34세 / 체육<br><br>짧은 스포츠머리, 다부진 체격. 거친 말투로 학생들을 통제하려 들지만 학부모 민원이 발생하면 급격히 태도가 바뀜.</div>
+                            <br>
+                            <div class="npc-quote">"야, 너 이리 와봐. 어디서 눈을 그렇게 떠?"</div>
+                        </div>
+                        <div class="stamp">경고</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>오혜진</div>
+                                <div class="info-label">소속</div><div>상담실</div>
+                                <div class="info-label">성향</div><div>INFJ</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[인적 사항]</strong> 여성 / 41세 / 위클래스<br><br>단정한 단발, 무테 안경. 영혼 없는 공감 리액션의 대가. 기록상 완벽한 상담을 수행하나 실제로는 서류 처리에만 관심 있음.</div>
+                            <br>
+                            <div class="npc-quote">"그랬구나, 마음이 많이 힘들었겠네. (영혼 없음)"</div>
+                        </div>
+                        <div class="stamp">면담</div>
+                    </article>
+                </div>
+            </div>
+            <button class="nav-btn next-btn">❯</button>
+        </div>
+
+        <!-- 학생 파트 -->
+        <div class="category-label">학생진 : 2학년 3반</div>
+        <div class="slider-wrapper" id="student-slider">
+            <button class="nav-btn prev-btn">❮</button>
+            <div class="slider-container">
+                <div class="slider-track">
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>한동우</div>
+                                <div class="info-label">분류</div><div>포식자</div>
+                                <div class="info-label">성향</div><div>ENTP</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[기록]</strong> 남성 / 18세 / 반장<br><br>풀어헤친 셔츠와 투블럭. 교사의 실수를 지적하며 당황하는 모습을 즐기는 무리의 우두머리.</div>
+                            <br>
+                            <div class="npc-quote">"선생님, 이 문장 비문인데... 생기부 수준 떨어지게."</div>
+                        </div>
+                        <div class="stamp">감시</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>송아린</div>
+                                <div class="info-label">분류</div><div>포식자</div>
+                                <div class="info-label">성향</div><div>ISFP</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[기록]</strong> 여성 / 18세<br><br>금발 탈색모와 진한 화장. 화려한 겉모습과 달리 아주 차갑고 날카로운 말로 교사에게 정신적 타격을 입힘.</div>
+                            <br>
+                            <div class="npc-quote">"우리 아빠가 이 학교에 기부한 게 얼마더라?"</div>
+                        </div>
+                        <div class="stamp">위험</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>서준혁</div>
+                                <div class="info-label">분류</div><div>우인</div>
+                                <div class="info-label">성향</div><div>ENTJ</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[기록]</strong> 남성 / 18세 / 전교회장<br><br>깔끔한 교복과 명품 시계. 완벽한 모범생의 탈을 쓰고 모든 상황을 녹음하며 교사의 실수를 수집함.</div>
+                            <br>
+                            <div class="npc-quote">"방금 하신 말씀, 가이드라인 위반인 거 아시죠?"</div>
+                        </div>
+                        <div class="stamp">기밀</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>윤채원</div>
+                                <div class="info-label">분류</div><div>우인</div>
+                                <div class="info-label">성향</div><div>ENFJ</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[기록]</strong> 여성 / 18세 / 부반장<br><br>갈색 긴 생머리와 리본. 상냥한 태도로 교사에게 접근해 정보를 캐낸 뒤 학부모회에 보고함.</div>
+                            <br>
+                            <div class="npc-quote">"선생님 힘드시죠? 아, 저희 엄마가 곧 오신대요."</div>
+                        </div>
+                        <div class="stamp">관찰</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>강민재</div>
+                                <div class="info-label">분류</div><div>우인</div>
+                                <div class="info-label">성향</div><div>ESFJ</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[기록]</strong> 남성 / 18세 / 서기<br><br>바가지 머리. 항상 태블릿을 소지하며 교사의 모든 발언을 실시간으로 타이핑해 공유함.</div>
+                            <br>
+                            <div class="npc-quote">"선생님, 방금 발언 워딩 그대로 생기부에 적어도 되죠?"</div>
+                        </div>
+                        <div class="stamp">기록중</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>이서윤</div>
+                                <div class="info-label">분류</div><div>유령</div>
+                                <div class="info-label">성향</div><div>ISTJ</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[기록]</strong> 여성 / 18세<br><br>노이즈 캔슬링 헤드폰 착용. 교실 내 어떤 폭력이나 부조리 상황이 발생해도 '못 봤다'고 일관함.</div>
+                            <br>
+                            <div class="npc-quote">"못 봤는데요. 제 알 바 아니잖아요."</div>
+                        </div>
+                        <div class="stamp">방관</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>박도현</div>
+                                <div class="info-label">분류</div><div>유령</div>
+                                <div class="info-label">성향</div><div>INTP</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[기록]</strong> 남성 / 18세<br><br>회색 후드티. 항상 엎드려 자고 있으나 주변 상황은 누구보다 정확히 꿰뚫고 있는 기이한 인물.</div>
+                            <br>
+                            <div class="npc-quote">"귀찮게... 그냥 대충 적어주고 끝내시죠."</div>
+                        </div>
+                        <div class="stamp">수면중</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>김하은</div>
+                                <div class="info-label">분류</div><div>유령</div>
+                                <div class="info-label">성향</div><div>INTJ</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[기록]</strong> 여성 / 18세<br><br>숏컷과 차가운 눈빛. 자신보다 지적 능력이 낮다고 판단되는 모든 이들을 벌레 보듯 무시함.</div>
+                            <br>
+                            <div class="npc-quote">"그런 수준 낮은 질문에 대답해야 하나요?"</div>
+                        </div>
+                        <div class="stamp">냉소</div>
+                    </article>
+                </div>
+            </div>
+            <button class="nav-btn next-btn">❯</button>
+        </div>
+
+        <!-- 학부모 파트 -->
+        <div class="category-label">학부모진 : 권력의 배후</div>
+        <div class="slider-wrapper" id="parent-slider">
+            <button class="nav-btn prev-btn">❮</button>
+            <div class="slider-container">
+                <div class="slider-track">
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>서창훈</div>
+                                <div class="info-label">관계</div><div>서준혁 父</div>
+                                <div class="info-label">성향</div><div>ENTJ</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[분석]</strong> 남성 / 49세 / 변호사<br><br>로펌 대표. 법률 지식을 총동원해 학교 행정을 압박하며 아들의 기록을 관리하는 실권자.</div>
+                            <br>
+                            <div class="npc-quote">"우리 아들 생기부, 법적으로 문제 삼아야겠습니까?"</div>
+                        </div>
+                        <div class="stamp">위험</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>홍혜숙</div>
+                                <div class="info-label">관계</div><div>윤채원 母</div>
+                                <div class="info-label">직책</div><div>학부모회장</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[분석]</strong> 여성 / 45세 / 학부모회장<br><br>보라색 파티 드레스. 학교 운영위원회 실질적 지배자. 기분에 따라 교사의 인사를 좌우하려 함.</div>
+                            <br>
+                            <div class="npc-quote">"우리 채원이 생기부에 부정적인 단어가 있네요?"</div>
+                        </div>
+                        <div class="stamp">압력</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>한기철</div>
+                                <div class="info-label">관계</div><div>한동우 父</div>
+                                <div class="info-label">성향</div><div>ESTP</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[분석]</strong> 남성 / 50세 / 건설사대표<br><br>금목걸이와 가죽 재킷. 막대한 자금력을 바탕으로 학교 기부금을 조절하며 위압적인 태도를 보임.</div>
+                            <br>
+                            <div class="npc-quote">"돈이면 다 되는 세상인데, 생기부 한 줄이 뭐라고."</div>
+                        </div>
+                        <div class="stamp">요주의</div>
+                    </article>
+
+                    <article class="npc-card">
+                        <div class="resume-header">
+                            <div class="info-table">
+                                <div class="info-label">성명</div><div>김지영</div>
+                                <div class="info-label">관계</div><div>이서윤 母</div>
+                                <div class="info-label">성향</div><div>ISFJ</div>
+                            </div>
+                            <div class="photo-area">증명사진</div>
+                        </div>
+                        <div class="npc-content">
+                            <div class="npc-intro"><strong>[분석]</strong> 여성 / 43세 / 교수<br><br>단정한 정장. 지적인 우월감을 바탕으로 교사의 자질을 논리적으로 비판하며 심리적 열등감을 유발함.</div>
+                            <br>
+                            <div class="npc-quote">"이게 최선인가요? 교육자로서의 자질이 의심되네요."</div>
+                        </div>
+                        <div class="stamp">관찰</div>
+                    </article>
+                </div>
+            </div>
+            <button class="nav-btn next-btn">❯</button>
+        </div>
+
+    </div>
+
+    <script>
+        // 로딩 시스템
+        window.addEventListener('load', () => {
+            const progressBar = document.getElementById('progress-bar');
+            const loadingScreen = document.getElementById('loading-screen');
+            const mainSite = document.getElementById('main-site');
+            let progress = 0;
+
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 20) + 5;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        loadingScreen.style.opacity = '0';
+                        mainSite.style.display = 'block';
+                        setTimeout(() => { loadingScreen.style.display = 'none'; }, 500);
+                        // 슬라이더 초기화
+                        initSliders();
+                    }, 300);
+                }
+                progressBar.style.width = progress + '%';
+            }, 100);
+        });
+
+        // 슬라이더 제어 로직
+        function initSliders() {
+            const wrappers = document.querySelectorAll('.slider-wrapper');
+            
+            wrappers.forEach(wrapper => {
+                const track = wrapper.querySelector('.slider-track');
+                const prevBtn = wrapper.querySelector('.prev-btn');
+                const nextBtn = wrapper.querySelector('.next-btn');
+                const cards = track.querySelectorAll('.npc-card');
+                
+                let index = 0;
+                
+                function updateSlider() {
+                    // 화면 너비에 따라 카드 개수 계산
+                    const visibleCards = window.innerWidth > 800 ? 2 : 1;
+                    const maxIndex = cards.length - visibleCards;
+                    
+                    if (index < 0) index = 0;
+                    if (index > maxIndex) index = maxIndex;
+                    
+                    const cardWidth = cards[0].offsetWidth + 20; // 20은 gap
+                    track.style.transform = `translateX(-${index * cardWidth}px)`;
+                }
+
+                prevBtn.addEventListener('click', () => {
+                    index--;
+                    updateSlider();
+                });
+
+                nextBtn.addEventListener('click', () => {
+                    index++;
+                    updateSlider();
+                });
+
+                window.addEventListener('resize', updateSlider);
+            });
+        }
+    </script>
+</body>
+</html>
