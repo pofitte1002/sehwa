@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>학교생활기록부 - 세화고등학교 세계관</title>
+    <title>학교생활기록부 - 세화고등학교</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&family=Nanum+Myeongjo:wght@400;700;800&family=Gaegu:wght@400;700&display=swap');
         
@@ -83,12 +83,15 @@
         .npc-card:nth-child(even) { transform: rotate(1deg); }
         .npc-card:nth-child(odd) { transform: rotate(-1deg); }
 
-        /* 1. 사진 (상단 배치) */
+        /* 사진 영역 */
         .photo-area { 
             width: 100%; aspect-ratio: 1/1; 
             border: 2px solid #222; background: #eee; 
-            margin-bottom: 20px; display: flex; align-items: center; justify-content: center;
-            font-size: 1rem; color: #888; font-weight: bold;
+            margin-bottom: 20px; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .photo-area img {
+            width: 100%; height: 100%; object-fit: cover;
         }
 
         /* 2. 인적사항 표 */
@@ -99,7 +102,6 @@
         .info-table td { border: 1px solid #222; padding: 6px 10px; }
         .info-label { background: #f0f0f0; font-weight: bold; width: 70px; text-align: center; }
 
-        /* 3. 기록 및 형광펜 */
         .npc-content { padding-left: 10px; flex-grow: 1; z-index: 2; }
         .npc-quote { 
             margin-top: 20px; background: var(--neon-yellow); color: #000; 
@@ -490,4 +492,5 @@
     </script>
 </body>
 </html>
+
 
